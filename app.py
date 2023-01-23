@@ -5,6 +5,7 @@ from deeplearning import OCR
 import shutil
 import csv
 import time
+from mongoconn import insert,search
 
 # webserver gateway interface
 app = Flask(__name__)
@@ -47,7 +48,6 @@ def history():
     if request.method == 'POST':
         M = request.form['Month']
         Y = request.form['Year']
-        print(M,Y)
         with open("database.csv", 'r') as file:
             csvreader = csv.reader(file)
             header = next(csvreader)
@@ -69,8 +69,43 @@ def history():
             header = next(csvreader)
             for row in csvreader:
                 rows.append(row)
-    print(rows)
     return render_template('history.html',data=rows,M=M,Y=Y)
+
+#fungsi api
+#1 url untuk post dan get
+@app.route('/api',methods=['POST','GET'])
+def api():
+    #logic jika menerima post request berbentuk file
+    if request.method == 'POST':
+        #logic untuk mencoba mengambil file
+        try : upload_file = request.files['']
+        #jika gagal
+        except : return {"Message":f"Error, Please POST requests a image"}
+        #jika berhasil
+        fd = getfd()
+        path_save = os.path.join(UPLOAD_PATH+str(fd)+"/"+'images.jpg')
+        upload_file.save(path_save)
+        #plat = OCR(os.path.join(UPLOAD_PATH+str(fd)+"/"+'images.jpg'))
+        a = object_detection(path=(os.path.join(UPLOAD_PATH+str(fd)+"/"+'images.jpg')),filename='image.jpg')
+        shutil.move('image.jpg', os.path.join(UPLOAD_PATH+str(fd)+"/"+'image.jpg'))
+        plat = OCR('./static/roi/image_1.jpg')
+        uuid = insert(fd,plat)
+        return {"Message":f"Sucess, UUID : {uuid}, Please GET requests with this UUID to get the extracted data"}
+    #logic jika menerima get request bersama uuid
+    elif request.method == 'GET':
+        #logic untuk mendapatkan value key UUID
+        try : uuid = request.args.get('UUID')
+        #jika gagal
+        except : return {"Message":f"Error, Please GET requests with key 'UUID' and received UUID from POST requesting a image"}
+        #jika berhasil
+        data = search(uuid)
+        return data
+    return '''
+    <form method="post" enctype="multipart/form-data">
+      <input type="file" name="image">
+      <input type="submit">
+    </form>
+    '''
 
 if __name__ =="__main__":
     app.run(debug=True)
