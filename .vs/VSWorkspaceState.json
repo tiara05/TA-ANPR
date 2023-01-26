@@ -1,8 +1,7 @@
 {
   "ExpandedNodes": [
-    "",
-    "\\templates"
+    ""
   ],
-  "SelectedNode": "\\app.py",
+  "SelectedNode": "\\mongoconn.py",
   "PreviewInSolutionExplorer": false
 }
