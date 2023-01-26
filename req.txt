@@ -1,6 +1,6 @@
 flask
 ipython
-keras==2.7.0
+keras
 Keras-Preprocessing
 matplotlib
 numpy

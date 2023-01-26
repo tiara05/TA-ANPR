@@ -5,7 +5,7 @@ from deeplearning import OCR
 import shutil
 import csv
 import time
-from mongoconn import insert,search
+from mongoconn import *
 
 # webserver gateway interface
 app = Flask(__name__)
@@ -37,6 +37,7 @@ def index():
             writer = csv.writer(file)
             if len(plat) == 0: plat="Undetected"
             writer.writerow([fd,time.strftime("%d"),time.strftime("%b"),time.strftime("%Y"),f"/static/upload/{fd}/images.jpg",f"/static/upload/{fd}/image.jpg",plat])
+        print(str(fd)+"/images.jpg",plat,len(plat),fd)
         return render_template('index.html',upload=True,upload_image=str(fd)+"/images.jpg",text=plat,no=len(plat),idx=fd)
     return render_template('index.html',upload=False)
 
@@ -48,6 +49,7 @@ def history():
     if request.method == 'POST':
         M = request.form['Month']
         Y = request.form['Year']
+        print(M,Y)
         with open("database.csv", 'r') as file:
             csvreader = csv.reader(file)
             header = next(csvreader)
@@ -69,6 +71,7 @@ def history():
             header = next(csvreader)
             for row in csvreader:
                 rows.append(row)
+    print(rows)
     return render_template('history.html',data=rows,M=M,Y=Y)
 
 #fungsi api
@@ -78,7 +81,7 @@ def api():
     #logic jika menerima post request berbentuk file
     if request.method == 'POST':
         #logic untuk mencoba mengambil file
-        try : upload_file = request.files['']
+        try : upload_file = request.files['image']
         #jika gagal
         except : return {"Message":f"Error, Please POST requests a image"}
         #jika berhasil
@@ -90,7 +93,7 @@ def api():
         shutil.move('image.jpg', os.path.join(UPLOAD_PATH+str(fd)+"/"+'image.jpg'))
         plat = OCR('./static/roi/image_1.jpg')
         uuid = insert(fd,plat)
-        return {"Message":f"Sucess, UUID : {uuid}, Please GET requests with this UUID to get the extracted data"}
+        return {"Message":f"Sucess, UUID : {uuid}, Please GET requests with this UUID to get the extracted data","UUID":uuid}
     #logic jika menerima get request bersama uuid
     elif request.method == 'GET':
         #logic untuk mendapatkan value key UUID
@@ -101,11 +104,16 @@ def api():
         data = search(uuid)
         return data
     return '''
+    <h1>Upload new File</h1>
     <form method="post" enctype="multipart/form-data">
       <input type="file" name="image">
       <input type="submit">
     </form>
     '''
+
+@app.route('/api/all',methods=['GET'])
+def api_all():
+    return {"data":getall()}
 
 if __name__ =="__main__":
     app.run(debug=True)
